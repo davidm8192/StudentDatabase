@@ -1,0 +1,14 @@
+{
+    "java.project.sourcePaths": ["src"],
+    "java.project.outputPath": "bin",
+    "java.project.referencedLibraries": {
+        "include": [
+            "lib/**/*.jar",
+            "/Users/david/Downloads/**/*.jar",
+            "/Users/david/Desktop/Prin Info Projects/**/*.jar"
+        ],
+        "exclude": [
+            "/Users/david/Downloads/mysql-connector-j-8.0.32.jar"
+        ]
+    }
+}
