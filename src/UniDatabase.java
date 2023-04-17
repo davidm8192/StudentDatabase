@@ -11,12 +11,17 @@ import com.mysql.cj.jdbc.result.ResultSetMetaData;
 
 public class UniDatabase {
 
-    static final String DATABASE_URL = "jdbc:mysql://localhost:3306/uni";
-    static final String USER = "root";
-    static final String PASSWORD = "studentdatabase";
+    static String DATABASE_URL = "";
+    static String USER = "";
+    static String PASSWORD = "";
     private static final DecimalFormat df = new DecimalFormat("0.00");
 
     public static void main(String[] args) throws Exception {
+        // Store commandline info
+        DATABASE_URL = args[0];
+        USER = args[1];
+        PASSWORD = args[2];
+
         // Create database with tables and 100 random students
         //createDatabase(); 
 
@@ -61,10 +66,14 @@ public class UniDatabase {
                     searchByGPA(threshold2, false);
                     break;
                 case 5:
-                    getDeptStats();
+                    System.out.print("Please enter the department: ");
+                    String dept = sc.next();
+                    getDeptStats(dept);
                     break;
                 case 6:
-                    getClassStats();
+                    System.out.print("Please enter the class: ");
+                    String className = sc.next();
+                    getClassStats(className);
                     break;
                 case 7:
                     executeQuery();
@@ -86,8 +95,36 @@ public class UniDatabase {
             // Connect to the database
             Class.forName("com.mysql.cj.jdbc.Driver");
             Connection conn = DriverManager.getConnection(DATABASE_URL, USER, PASSWORD);
-            Statement stmt = conn.createStatement();
 
+            System.out.println("Please enter the query: ");
+            Scanner sc = new Scanner(System.in);
+            String query = sc.nextLine();
+
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery(query);
+
+            ResultSetMetaData rsmd = (ResultSetMetaData) rs.getMetaData();
+            int columnsNumber = rsmd.getColumnCount();
+
+            boolean printColumns = true; 
+            while (rs.next()) {
+                if(printColumns) {
+                    for(int i = 1; i <= columnsNumber; i++) {
+                        if (i > 1) System.out.print("\t");
+                        System.out.print(rsmd.getColumnName(i));
+                        if(i == columnsNumber) {
+                            printColumns = false; 
+                            System.out.println();
+                        }
+                    }
+                }
+                for (int i = 1; i <= columnsNumber; i++) {
+                    if (i > 1) System.out.print("\t");
+                    String columnValue = rs.getString(i);
+                    System.out.print(columnValue);
+                }
+                System.out.println();
+            }
         } 
         catch (SQLException e) {
             System.out.println("Error: " + e.getMessage());
@@ -95,13 +132,32 @@ public class UniDatabase {
     }
 
 
-    private static void getClassStats() throws ClassNotFoundException {
+    private static void getClassStats(String className) throws ClassNotFoundException {
         try {
             // Connect to the database
             Class.forName("com.mysql.cj.jdbc.Driver");
             Connection conn = DriverManager.getConnection(DATABASE_URL, USER, PASSWORD);
-            Statement stmt = conn.createStatement();
 
+            String s1 = "SELECT (SELECT COUNT(*) FROM IsTaking WHERE name = ?) AS numStudents, " + 
+            "(SELECT COUNT(*) FROM HasTaken WHERE name = ? AND grade = 'A') AS numA, " +
+            "(SELECT COUNT(*) FROM HasTaken WHERE name = ? AND grade = 'B') AS numB, " +
+            "(SELECT COUNT(*) FROM HasTaken WHERE name = ? AND grade = 'C') AS numC, " +
+            "(SELECT COUNT(*) FROM HasTaken WHERE name = ? AND grade = 'D') as numD, " +
+            "(SELECT COUNT(*) FROM HasTaken WHERE name = ? AND grade = 'F') as numF;";
+
+            PreparedStatement ps = conn.prepareStatement(s1, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+            ps.setString(1, className);
+            ps.setString(2, className);
+            ps.setString(3, className);
+            ps.setString(4, className);
+            ps.setString(5, className);
+            ps.setString(6, className);
+            ResultSet rs = ps.executeQuery();
+
+            while(rs.next()) {
+                System.out.println("Number of students: " + rs.getInt("numStudents") + "\nGrades of previous enrollees: " + 
+                "\nA: " + rs.getInt("numA") + "\nB: " + rs.getInt("numB") + "\nC: " + rs.getInt("numC") + "\nD: " + rs.getInt("numD") + "\nF: " + rs.getInt("numF"));
+            }
         } 
         catch (SQLException e) {
             System.out.println("Error: " + e.getMessage());
@@ -109,13 +165,21 @@ public class UniDatabase {
     }
 
 
-    private static void getDeptStats() throws ClassNotFoundException {
+    private static void getDeptStats(String dept) throws ClassNotFoundException {
         try {
             // Connect to the database
             Class.forName("com.mysql.cj.jdbc.Driver");
             Connection conn = DriverManager.getConnection(DATABASE_URL, USER, PASSWORD);
 
+            String s1 = "SELECT AVG(GPA) AS avgGPA, COUNT(*) AS numStudents FROM StudentGPA WHERE id IN (SELECT ma.sid FROM Majors ma WHERE ma.dname = ? UNION SELECT mi.sid FROM Minors mi WHERE mi.dname = ?);";
+            PreparedStatement ps = conn.prepareStatement(s1, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+            ps.setString(1, dept);
+            ps.setString(2, dept);
+            ResultSet rs = ps.executeQuery();
 
+            while(rs.next()) {
+                System.out.println("Number of students: " + rs.getInt("numStudents") + "\nAverage GPA: " + df.format(rs.getDouble("avgGPA")));
+            }
         } 
         catch (SQLException e) {
             System.out.println("Error: " + e.getMessage());
@@ -367,6 +431,8 @@ public class UniDatabase {
                 "GROUP BY s.first_name, s.last_name, s.id;";
                 stmt2.executeUpdate(s);
             } catch (SQLException e) {}
+
+            
 
         } catch (SQLException e) {
             e.printStackTrace();
