@@ -1,18 +1,3 @@
-## Getting Started
-
-Welcome to the VS Code Java world. Here is a guideline to help you get started to write Java code in Visual Studio Code.
-
-## Folder Structure
-
-The workspace contains two folders by default, where:
-
-- `src`: the folder to maintain sources
-- `lib`: the folder to maintain dependencies
-
-Meanwhile, the compiled output files will be generated in the `bin` folder by default.
-
-> If you want to customize the folder structure, open `.vscode/settings.json` and update the related settings there.
-
-## Dependency Management
-
-The `JAVA PROJECTS` view allows you to manage your dependencies. More details can be found [here](https://github.com/microsoft/vscode-java-dependency#manage-dependencies).
+**Generating Random Data**
+To generate random data, I created a Departments enum class storing the name and campus of each department, a Classes enum class storing the name and credits of each class, and a Student class to create Student objects storing each student's first name, last name, id, major(s), minor(s), classes taking, and classes taken. 
+I used these classes to build the DataGenerator class, which creates an ArrayList of 100 Student objects and uses the Java Random class for random number selection. Each student object is assigned an id that's incremented by 1 for each new student object created to give every student a unique id, and assigned a random first name and random last name from an array of common first and last names. Then, they are assigned a random number of majors (1 or 2) and a random number of minors (0 to 2) and from there, they are randomly assigned that number of majors and minors from the arrays of possible majors and minors. Next, they are randomly assigned a year and depending on that year, they are assigned the possible range of credits. Finally, they are randomly assigned the number of classes they are currently taking (1-5) from an EnumSet of classes, and are randomly assigned the number of classes they have taken depending on their total number of credits.  

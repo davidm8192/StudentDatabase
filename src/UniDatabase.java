@@ -5,9 +5,8 @@ import java.sql.SQLException;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.text.DecimalFormat;
+import java.sql.ResultSetMetaData; 
 import java.util.*;
-
-import com.mysql.cj.jdbc.result.ResultSetMetaData; 
 
 public class UniDatabase {
 
@@ -18,12 +17,12 @@ public class UniDatabase {
 
     public static void main(String[] args) throws Exception {
         // Store commandline info
-        DATABASE_URL = args[0];
+        DATABASE_URL = "jdbc:mysql://" + args[0];
         USER = args[1];
         PASSWORD = args[2];
 
         // Create database with tables and 100 random students
-        //createDatabase(); 
+        createDatabase(); 
 
         // Create views to help
         createViews();
@@ -87,6 +86,7 @@ public class UniDatabase {
                     break;
             }
         }
+        sc.close(); 
     }
 
 
@@ -125,6 +125,7 @@ public class UniDatabase {
                 }
                 System.out.println();
             }
+
         } 
         catch (SQLException e) {
             System.out.println("Error: " + e.getMessage());
@@ -454,82 +455,86 @@ public class UniDatabase {
             String minorsTable = "CREATE TABLE Minors (sid INT, dname VARCHAR(50), PRIMARY KEY(sid, dname), FOREIGN KEY(sid) REFERENCES Students(id), FOREIGN KEY(dname) REFERENCES Departments(name));";
             String isTakingTable = "CREATE TABLE IsTaking (sid INT, name VARCHAR(50), PRIMARY KEY(sid, name), FOREIGN KEY(sid) REFERENCES Students(id), FOREIGN KEY(name) REFERENCES Classes(name));";
             String hasTakenTable = "CREATE TABLE HasTaken (sid INT, name VARCHAR(50), grade VARCHAR(1), PRIMARY KEY(sid, name), FOREIGN KEY(sid) REFERENCES Students(id), FOREIGN KEY (name) REFERENCES Classes(name));";
-            stmt.executeUpdate(deptTable);
-            stmt.executeUpdate(studentTable);
-            stmt.executeUpdate(classTable);
-            stmt.executeUpdate(majorsTable);
-            stmt.executeUpdate(minorsTable);
-            stmt.executeUpdate(hasTakenTable);
-            stmt.executeUpdate(isTakingTable);
-
-            // Insert data into departments table
-            String insertDepartment = "INSERT INTO Departments(name, campus) VALUES (?, ?);";
-            PreparedStatement pstmt = conn.prepareStatement(insertDepartment);
-            for(Departments dept : Departments.values()) {
-                pstmt.setString(1, dept.getName());
-                pstmt.setString(2, dept.getCampus());
-                pstmt.executeUpdate();
-            }
-            // Insert data into classes table
-            String insertClass = "INSERT INTO Classes(name, credits) VALUES (?, ?);";
-            pstmt = conn.prepareStatement(insertClass);
-            for(Classes c : Classes.values()) {
-                pstmt.setString(1, c.getName());
-                pstmt.setInt(2, c.getCredits());
-                pstmt.executeUpdate();
-            }
-
-            // Generate 100 random students and insert them into the database
-            ArrayList<Student> students = DataGenerator.generateRandStudents();
-
-            String insertStudent = "INSERT INTO Students(first_name, last_name, id) VALUES (?, ?, ?);";
-            String insertMajor = "INSERT INTO Majors(sid, dname) VALUES (?, ?);";
-            String insertMinor = "INSERT INTO Minors(sid, dname) VALUES (?, ?);";
-            String insertIsTaking = "INSERT INTO IsTaking(sid, name) VALUES (?, ?);";
-            String insertHasTaken = "INSERT INTO HasTaken(sid, name, grade) VALUES (?, ?, ?);";
-            pstmt = conn.prepareStatement(insertStudent);
-            PreparedStatement pstmt2 = conn.prepareStatement(insertMajor);
-            PreparedStatement pstmt3 = conn.prepareStatement(insertMinor);
-            PreparedStatement pstmt4 = conn.prepareStatement(insertIsTaking);
-            PreparedStatement pstmt5 = conn.prepareStatement(insertHasTaken);
             
-            for(Student s : students) {
-                // Insert student into Students table
-                pstmt.setString(1, s.getFName());
-                pstmt.setString(2, s.getLName());
-                pstmt.setInt(3, s.getID());
-                pstmt.executeUpdate();
+            try {
+                stmt.executeUpdate(deptTable);
+                stmt.executeUpdate(studentTable);
+                stmt.executeUpdate(classTable);
+                stmt.executeUpdate(majorsTable);
+                stmt.executeUpdate(minorsTable);
+                stmt.executeUpdate(hasTakenTable);
+                stmt.executeUpdate(isTakingTable);
+            } catch (SQLException e) {}
 
-                // Insert student's majors into Majors table
-                for(String major : s.getMajors()) {
-                    pstmt2.setInt(1, s.getID());
-                    pstmt2.setString(2, major);
-                    pstmt2.executeUpdate();
+            try {
+                // Insert data into departments table
+                String insertDepartment = "INSERT INTO Departments(name, campus) VALUES (?, ?);";
+                PreparedStatement pstmt = conn.prepareStatement(insertDepartment);
+                for(Departments dept : Departments.values()) {
+                    pstmt.setString(1, dept.getName());
+                    pstmt.setString(2, dept.getCampus());
+                    pstmt.executeUpdate();
+                }
+                // Insert data into classes table
+                String insertClass = "INSERT INTO Classes(name, credits) VALUES (?, ?);";
+                pstmt = conn.prepareStatement(insertClass);
+                for(Classes c : Classes.values()) {
+                    pstmt.setString(1, c.getName());
+                    pstmt.setInt(2, c.getCredits());
+                    pstmt.executeUpdate();
                 }
 
-                // Insert student's minors into Minors table
-                for(String minor : s.getMinors()) {
-                    pstmt3.setInt(1, s.getID());
-                    pstmt3.setString(2, minor);
-                    pstmt3.executeUpdate();
-                }
+                // Generate 100 random students and insert them into the database
+                ArrayList<Student> students = DataGenerator.generateRandStudents();
 
-                // Insert student's current classes into IsTaking table
-                for(Classes c : s.getClassesTaking()) {
-                    pstmt4.setInt(1, s.getID());
-                    pstmt4.setString(2, c.getName());
-                    pstmt4.executeUpdate();
-                }
+                String insertStudent = "INSERT INTO Students(first_name, last_name, id) VALUES (?, ?, ?);";
+                String insertMajor = "INSERT INTO Majors(sid, dname) VALUES (?, ?);";
+                String insertMinor = "INSERT INTO Minors(sid, dname) VALUES (?, ?);";
+                String insertIsTaking = "INSERT INTO IsTaking(sid, name) VALUES (?, ?);";
+                String insertHasTaken = "INSERT INTO HasTaken(sid, name, grade) VALUES (?, ?, ?);";
+                pstmt = conn.prepareStatement(insertStudent);
+                PreparedStatement pstmt2 = conn.prepareStatement(insertMajor);
+                PreparedStatement pstmt3 = conn.prepareStatement(insertMinor);
+                PreparedStatement pstmt4 = conn.prepareStatement(insertIsTaking);
+                PreparedStatement pstmt5 = conn.prepareStatement(insertHasTaken);
+                
+                for(Student s : students) {
+                    // Insert student into Students table
+                    pstmt.setString(1, s.getFName());
+                    pstmt.setString(2, s.getLName());
+                    pstmt.setInt(3, s.getID());
+                    pstmt.executeUpdate();
 
-                // Insert student's past classes into HasTaken table
-                for(ClassTaken c : s.getClassesTaken()) {
-                    pstmt5.setInt(1, s.getID());
-                    pstmt5.setString(2, c.getClassTaken().getName());
-                    pstmt5.setString(3, String.valueOf(c.getGrade()));
-                    pstmt5.executeUpdate();
-                }
-            }
+                    // Insert student's majors into Majors table
+                    for(String major : s.getMajors()) {
+                        pstmt2.setInt(1, s.getID());
+                        pstmt2.setString(2, major);
+                        pstmt2.executeUpdate();
+                    }
 
+                    // Insert student's minors into Minors table
+                    for(String minor : s.getMinors()) {
+                        pstmt3.setInt(1, s.getID());
+                        pstmt3.setString(2, minor);
+                        pstmt3.executeUpdate();
+                    }
+
+                    // Insert student's current classes into IsTaking table
+                    for(Classes c : s.getClassesTaking()) {
+                        pstmt4.setInt(1, s.getID());
+                        pstmt4.setString(2, c.getName());
+                        pstmt4.executeUpdate();
+                    }
+
+                    // Insert student's past classes into HasTaken table
+                    for(ClassTaken c : s.getClassesTaken()) {
+                        pstmt5.setInt(1, s.getID());
+                        pstmt5.setString(2, c.getClassTaken().getName());
+                        pstmt5.setString(3, String.valueOf(c.getGrade()));
+                        pstmt5.executeUpdate();
+                    }
+                }
+            } catch (SQLException e) {}
         }
         catch (SQLException e) {
             System.out.println("Error: " + e.getMessage());

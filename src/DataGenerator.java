@@ -78,7 +78,6 @@ public class DataGenerator {
                 classes.remove(randomClass);
             }
 
-            s.calcGPA();
             randomData.add(s);
         }
         
